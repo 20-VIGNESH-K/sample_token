@@ -2,7 +2,10 @@ module sample_token
 
 go 1.18
 
-require go.mongodb.org/mongo-driver v1.12.1
+require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	go.mongodb.org/mongo-driver v1.12.1
+)
 
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect

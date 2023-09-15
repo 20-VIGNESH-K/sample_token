@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -60,6 +62,46 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"tokens": tokens})
 
 		}()
+
+	})
+
+	router.POST("/createtokens", func(c *gin.Context) {
+
+		header := jwt.SigningMethodHS256
+		payload := jwt.MapClaims{
+			"email":      "vignesh@123",
+			"age":        "21",
+			"customerId": "1",
+			"exp":        time.Now().Add(time.Hour * 1).Unix(),
+		}
+
+		join := jwt.NewWithClaims(header, payload)
+		signiture, _ := join.SignedString([]byte("SecretKey"))
+		fmt.Println(signiture)
+
+		_, err := collection.InsertOne(context.TODO(), map[string]interface{}{"token": signiture})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "token inserted successfully"})
+
+		token, _ := jwt.Parse(signiture, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Invalid Signing method")
+			}
+			return []byte("SecretKey"), nil
+
+		})
+		if token.Valid {
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				customerId, _ := claims["customerId"].(string)
+				fmt.Println(customerId)
+				emailId, _ := claims["email"].(string)
+				fmt.Println(emailId)
+				age, _ := claims["age"].(string)
+				fmt.Println(age)
+			}
+		}
 
 	})
 
